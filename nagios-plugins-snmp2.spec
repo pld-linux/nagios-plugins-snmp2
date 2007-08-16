@@ -13,6 +13,8 @@ Source1:	http://nagios.manubulon.com/nagios-snmp-plugins.1.1.1.tgz
 URL:		http://nagios.manubulon.com/
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
+%define		_plugindir	%{_libdir}/nagios/plugins
+
 %description
 SNMP checks for nagios
 
@@ -21,26 +23,22 @@ Wtyczki nagiosa do odpytywania po SNMP
 
 %prep
 %setup -q -n %{_proj_name}
-mkdir perl
+install -d perl
 tar xzf %{SOURCE1} -C perl
+mv perl/nagios_plugins/Change{log,Log.perl}
+sed -i -e 's,/usr/local/nagios/libexec,%{_plugindir},' perl/nagios_plugins/check_snmp_*.pl
 
 %build
 %configure \
-	--libexecdir=%{_libdir}/nagios/plugins
+	--libexecdir=%{_plugindir}
 %{__make}
-cd perl/nagios_plugins
-for i in `ls check_snmp_*.pl`; do
-	sed -i -e 's,/usr/local/nagios/libexec,%{_libdir}/nagios/plugins,' $i
-done
 
 %install
 rm -rf $RPM_BUILD_ROOT
 
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT
-cd perl/nagios_plugins
-mv Changelog ChangeLog.perl
-install check_snmp_*.pl $RPM_BUILD_ROOT%{_libdir}/nagios/plugins
+install perl/nagios_plugins/check_snmp_*.pl $RPM_BUILD_ROOT%{_plugindir}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -48,5 +46,4 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(644,root,root,755)
 %doc ABOUT-NLS AUTHORS ChangeLog NEWS README perl/nagios_plugins/ChangeLog.perl perl/nagios_plugins/doc/*
-
-%attr(755,root,root) %{_libdir}/nagios/plugins
+%attr(755,root,root) %{_plugindir}
